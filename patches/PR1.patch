@@ -8,7 +8,7 @@ index b01563e..b48b762 100644
  PROG = chkconfig
 -SBINDIR = /usr/sbin
 -MANDIR = /usr/man
-+SBINDIR = /sbin
++SBINDIR = /bin
 +MANDIR = /share/man
  ALTDIR = /var/lib/alternatives
  ALTDATADIR = /etc/alternatives
