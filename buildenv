@@ -1,6 +1,6 @@
 # Update bump details accordingly. Use bump check to confirm.
 # bump: chkconfig-version /CHKCONFIG_VERSION="(.*)"/ https://github.com/fedora-sysv/chkconfig.git|semver:*
-# CHKCONFIG_VERSION="V.R.M" # Specify a stable release
+# CHKCONFIG_VERSION="1.33" # Specify a stable release
 # export ZOPEN_STABLE_TAG="v${CHKCONFIG_VERSION}"
 
 ###
