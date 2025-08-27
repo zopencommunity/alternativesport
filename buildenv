@@ -40,7 +40,7 @@ export ZOPEN_SYSTEM_PREREQ=""
 
 #export ZOPEN_BOOTSTRAP="skip" ## Bootstrap program to run (defaults to './bootstrap')
 #export ZOPEN_CHECK="skip"     ## Check program to run (defaults to 'make')
-#export ZOPEN_CONFIGURE="skip" ## Configuration program to run (defaults to './configure')
+export ZOPEN_CONFIGURE="skip" ## Configuration program to run (defaults to './configure')
 export ZOPEN_INSTALL="zopen_install"   ## Installation program to run (defaults to 'make')
 export ZOPEN_MAKE="zopen_build"      ## Build program to run (defaults to 'make')
 #export ZOPEN_CLEAN=""         ## Clean up program to run (defaults to 'make')
