@@ -1,0 +1,108 @@
+diff --git i/Makefile w/Makefile
+index b01563e..b48b762 100644
+--- i/Makefile
++++ w/Makefile
+@@ -6,8 +6,8 @@ CFLAGS = -g -Wall $(RPM_OPT_FLAGS) -D_GNU_SOURCE
+ LDFLAGS += -g
+ MAN = chkconfig.8 ntsysv.8 alternatives.8
+ PROG = chkconfig
+-SBINDIR = /usr/sbin
+-MANDIR = /usr/man
++SBINDIR = /sbin
++MANDIR = /share/man
+ ALTDIR = /var/lib/alternatives
+ ALTDATADIR = /etc/alternatives
+ SYSTEMDUTILDIR = $(shell pkg-config --variable=systemdutildir systemd)
+@@ -18,7 +18,7 @@ NTOBJS = ntsysv.o leveldb.o
+ 
+ MERGED_SBIN ?= 0
+ 
+-all: subdirs $(PROG) ntsysv alternatives
++all: subdirs $(PROG) alternatives
+ 
+ subdirs:
+ 	for d in $(SUBDIRS); do \
+@@ -58,10 +58,10 @@ install:
+ 	[ -d $(DESTDIR)/$(ALTDATADIR) ] || mkdir -p -m 755 $(DESTDIR)/$(ALTDATADIR)
+ 	[ -d $(DESTDIR)/$(SYSTEMDUTILDIR) ] || mkdir -p -m 755 $(DESTDIR)/$(SYSTEMDUTILDIR)
+ 
+-	install -m 755 $(PROG) $(DESTDIR)/$(SBINDIR)/$(PROG)
+-	ln -s ../../..$(SBINDIR)/$(PROG) $(DESTDIR)/$(SYSTEMDUTILDIR)/systemd-sysv-install
++	#install -m 755 $(PROG) $(DESTDIR)/$(SBINDIR)/$(PROG)
++	#ln -s ../../..$(SBINDIR)/$(PROG) $(DESTDIR)/$(SYSTEMDUTILDIR)/systemd-sysv-install
+ 
+-	install -m 755 ntsysv $(DESTDIR)/$(SBINDIR)/ntsysv
++	#install -m 755 ntsysv $(DESTDIR)/$(SBINDIR)/ntsysv
+ 	install -m 755 alternatives $(DESTDIR)/$(SBINDIR)/alternatives
+ 	ln -s alternatives $(DESTDIR)/$(SBINDIR)/update-alternatives
+ 
+diff --git i/alternatives.c w/alternatives.c
+index 61a95ad..ebfb0a2 100644
+--- i/alternatives.c
++++ w/alternatives.c
+@@ -24,7 +24,9 @@
+ #include <string.h>
+ #include <sys/stat.h>
+ #include <sys/types.h>
++#ifndef __MVS__
+ #include <sys/unistd.h>
++#endif
+ #include <unistd.h>
+ 
+ #define FLAGS_TEST (1 << 0)
+diff --git i/chkconfig.c w/chkconfig.c
+index fcc0a8b..e341246 100644
+--- i/chkconfig.c
++++ w/chkconfig.c
+@@ -27,6 +27,9 @@
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ #include <unistd.h>
++#ifdef __MVS__
++#include <libgen.h>
++#endif
+ 
+ static char *progname;
+ 
+diff --git i/leveldb.c w/leveldb.c
+index eb8ee79..6dc3c75 100644
+--- i/leveldb.c
++++ w/leveldb.c
+@@ -13,7 +13,9 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
+  */
++#ifndef __MVS__
+ #include <alloca.h>
++#endif
+ #include <ctype.h>
+ #include <dirent.h>
+ #include <errno.h>
+diff --git i/ntsysv.c w/ntsysv.c
+index 8164cd7..51590d7 100644
+--- i/ntsysv.c
++++ w/ntsysv.c
+@@ -13,7 +13,9 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
+  */
++#ifndef __MVS__
+ #include <alloca.h>
++#endif
+ #include <ctype.h>
+ #include <dirent.h>
+ #include <errno.h>
+diff --git i/po/Makefile w/po/Makefile
+index f0353e5..9e1183d 100644
+--- i/po/Makefile
++++ w/po/Makefile
+@@ -1,7 +1,7 @@
+-INSTALL= /usr/bin/install -c
++INSTALL= install -c
+ INSTALL_PROGRAM= ${INSTALL}
+ INSTALL_DATA= ${INSTALL} -m 644
+-INSTALLNLSDIR=$(DESTDIR)/usr/share/locale
++INSTALLNLSDIR=$(DESTDIR)/share/locale
+ 
+ MSGMERGE = msgmerge
+ 
