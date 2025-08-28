@@ -1,5 +1,5 @@
 diff --git i/Makefile w/Makefile
-index b01563e..b48b762 100644
+index b01563e..541633a 100644
 --- i/Makefile
 +++ w/Makefile
 @@ -6,8 +6,8 @@ CFLAGS = -g -Wall $(RPM_OPT_FLAGS) -D_GNU_SOURCE
@@ -37,7 +37,7 @@ index b01563e..b48b762 100644
  	ln -s alternatives $(DESTDIR)/$(SBINDIR)/update-alternatives
  
 diff --git i/alternatives.c w/alternatives.c
-index 61a95ad..ebfb0a2 100644
+index 61a95ad..c261d33 100644
 --- i/alternatives.c
 +++ w/alternatives.c
 @@ -24,7 +24,9 @@
@@ -50,6 +50,41 @@ index 61a95ad..ebfb0a2 100644
  #include <unistd.h>
  
  #define FLAGS_TEST (1 << 0)
+@@ -872,7 +874,10 @@ static int matchFollowers(struct alternativeSet *set,
+     /* need to match the followers up; newLinks will parallel the original
+        ordering */
+     for (k = 0; k < set->numAlts; k++) {
+-        newLinks = malloc(sizeof(struct linkSet) * template.numFollowers);
++        int size = sizeof(struct linkSet) * template.numFollowers;
++        if (size == 0) 
++          size = sizeof(struct linkSet);
++        newLinks = malloc(size);
+         if (!newLinks)
+             return 3;
+ 
+@@ -1037,8 +1042,9 @@ static int addService(struct alternative newAlt, const char *altDir,
+     int forceLinks = 0;
+ 
+     if ((rc = readConfig(&set, newAlt.leader.title, altDir, stateDir, flags)) &&
+-        rc != 3 && rc != 2)
++        rc != 3 && rc != 2) {
+         return 2;
++    }
+ 
+     if (set.numAlts) {
+         if (!streq_bin(newAlt.leader.facility, set.alts[0].leader.facility)) {
+@@ -1067,8 +1073,10 @@ static int addService(struct alternative newAlt, const char *altDir,
+             set.numAlts++;
+         }
+ 
+-        if (matchFollowers(&set, template))
++        int rb;
++        if ((rb = matchFollowers(&set, template))) {
+             return 2;
++        }
+     } else {
+         set.alts = realloc(set.alts, sizeof(*set.alts) * (set.numAlts + 1));
+         set.alts[set.numAlts] = newAlt;
 diff --git i/chkconfig.c w/chkconfig.c
 index fcc0a8b..e341246 100644
 --- i/chkconfig.c
@@ -106,3 +141,698 @@ index f0353e5..9e1183d 100644
  
  MSGMERGE = msgmerge
  
+diff --git i/po/chkconfig.pot w/po/chkconfig.pot
+index 3ef8bf0..3454a7f 100644
+--- i/po/chkconfig.pot
++++ w/po/chkconfig.pot
+@@ -8,7 +8,7 @@ msgid ""
+ msgstr ""
+ "Project-Id-Version: PACKAGE VERSION\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2025-05-09 17:46+0200\n"
++"POT-Creation-Date: 2025-08-25 18:32-0400\n"
+ "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+ "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+ "Language-Team: LANGUAGE <LL@li.org>\n"
+@@ -17,53 +17,53 @@ msgstr ""
+ "Content-Type: text/plain; charset=CHARSET\n"
+ "Content-Transfer-Encoding: 8bit\n"
+ 
+-#: ../chkconfig.c:41
++#: ../chkconfig.c:44
+ #, c-format
+ msgid "%s version %s - Copyright (C) 1997-2000 Red Hat, Inc.\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:43
++#: ../chkconfig.c:46
+ #, c-format
+ msgid ""
+ "This may be freely redistributed under the terms of the GNU Public License.\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:47
++#: ../chkconfig.c:50
+ #, c-format
+ msgid "usage:   %s [name]\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:49
++#: ../chkconfig.c:52
+ #, c-format
+ msgid "usage:   %s <enable|disable|is-enabled> [name] \n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:52
++#: ../chkconfig.c:55
+ #, c-format
+ msgid "usage:   %s [--list] [--type <type>] [name]\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:54
++#: ../chkconfig.c:57
+ #, c-format
+ msgid "         %s --add <name>\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:55
++#: ../chkconfig.c:58
+ #, c-format
+ msgid "         %s --del <name>\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:56
++#: ../chkconfig.c:59
+ #, c-format
+ msgid "         %s --override <name>\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:58
++#: ../chkconfig.c:61
+ #, c-format
+ msgid "         %s [--level <levels>] [--type <type>] <name> %s\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:66
++#: ../chkconfig.c:69
+ #, c-format
+ msgid ""
+ "\n"
+@@ -74,7 +74,7 @@ msgid ""
+ "\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:73
++#: ../chkconfig.c:76
+ #, c-format
+ msgid ""
+ "      If you want to list systemd services use 'systemctl list-unit-files'.\n"
+@@ -83,506 +83,506 @@ msgid ""
+ "\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:83
++#: ../chkconfig.c:86
+ #, c-format
+ msgid ""
+ "service %s supports chkconfig, but is not referenced in any runlevel (run "
+ "'chkconfig --add %s')\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:87
++#: ../chkconfig.c:90
+ #, c-format
+ msgid "service %s does not support chkconfig\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:89
++#: ../chkconfig.c:92
+ #, c-format
+ msgid "error reading information on service %s: %s\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:98
++#: ../chkconfig.c:101
+ #, c-format
+ msgid "You do not have enough privileges to perform this operation.\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:469 ../chkconfig.c:474 ../chkconfig.c:600
++#: ../chkconfig.c:472 ../chkconfig.c:477 ../chkconfig.c:603
+ msgid "on"
+ msgstr ""
+ 
+-#: ../chkconfig.c:469 ../chkconfig.c:474 ../chkconfig.c:600
++#: ../chkconfig.c:472 ../chkconfig.c:477 ../chkconfig.c:603
+ msgid "off"
+ msgstr ""
+ 
+-#: ../chkconfig.c:555
++#: ../chkconfig.c:558
+ #, c-format
+ msgid "xinetd based services:\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:557
++#: ../chkconfig.c:560
+ #, c-format
+ msgid "failed to open directory %s: %s\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:695
++#: ../chkconfig.c:698
+ #, c-format
+ msgid "Note: Forwarding request to 'systemctl %s %s'.\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:701
++#: ../chkconfig.c:704
+ #, c-format
+ msgid "Failed to forward service request to systemctl: %m\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:757
++#: ../chkconfig.c:760
+ #, c-format
+ msgid "%s version %s\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:770
++#: ../chkconfig.c:773
+ #, c-format
+ msgid "--type must be 'sysv' or 'xinetd'\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:776
++#: ../chkconfig.c:779
+ #, c-format
+ msgid "only one of --list, --add, --del, or --override may be specified\n"
+ msgstr ""
+ 
+-#: ../chkconfig.c:887
++#: ../chkconfig.c:890
+ #, c-format
+ msgid "only one runlevel may be specified for a chkconfig query\n"
+ msgstr ""
+ 
+-#: ../ntsysv.c:49
++#: ../ntsysv.c:51
+ msgid "Press <F1> for more information on a service."
+ msgstr ""
+ 
+-#: ../ntsysv.c:99 ../ntsysv.c:138
++#: ../ntsysv.c:101 ../ntsysv.c:140
+ msgid "Ok"
+ msgstr ""
+ 
+-#: ../ntsysv.c:99
++#: ../ntsysv.c:101
+ msgid "Back"
+ msgstr ""
+ 
+-#: ../ntsysv.c:99
++#: ../ntsysv.c:101
+ msgid "Cancel"
+ msgstr ""
+ 
+-#: ../ntsysv.c:111
++#: ../ntsysv.c:113
+ msgid "What services should be automatically started?"
+ msgstr ""
+ 
+-#: ../ntsysv.c:118
++#: ../ntsysv.c:120
+ msgid "Services"
+ msgstr ""
+ 
+-#: ../ntsysv.c:334 ../ntsysv.c:363 ../ntsysv.c:402
++#: ../ntsysv.c:336 ../ntsysv.c:365 ../ntsysv.c:404
+ #, c-format
+ msgid "error reading info for service %s: %s\n"
+ msgstr ""
+ 
+-#: ../ntsysv.c:412
++#: ../ntsysv.c:414
+ #, c-format
+ msgid "error reading from directory %s: %s\n"
+ msgstr ""
+ 
+-#: ../ntsysv.c:452
++#: ../ntsysv.c:454
+ #, c-format
+ msgid "You must be root to run %s.\n"
+ msgstr ""
+ 
+-#: ../ntsysv.c:469
++#: ../ntsysv.c:471
+ #, c-format
+ msgid "bad argument to --levels\n"
+ msgstr ""
+ 
+-#: ../ntsysv.c:477
++#: ../ntsysv.c:479
+ #, c-format
+ msgid "No services may be managed by ntsysv!\n"
+ msgstr ""
+ 
+-#: ../leveldb.c:348
++#: ../leveldb.c:352
+ #, c-format
+ msgid "failed to open %s/init.d: %s\n"
+ msgstr ""
+ 
+-#: ../leveldb.c:797 ../leveldb.c:805
++#: ../leveldb.c:801 ../leveldb.c:809
+ #, c-format
+ msgid "failed to glob pattern %s: %s\n"
+ msgstr ""
+ 
+-#: ../leveldb.c:851
++#: ../leveldb.c:855
+ #, c-format
+ msgid "cannot determine current run level\n"
+ msgstr ""
+ 
+-#: ../leveldb.c:934
++#: ../leveldb.c:938
+ #, c-format
+ msgid "Unable to set SELinux context for %s: %s\n"
+ msgstr ""
+ 
+-#: ../leveldb.c:959
++#: ../leveldb.c:963
+ #, c-format
+ msgid "failed to make symlink %s: %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:83
++#: ../alternatives.c:85
+ #, c-format
+ msgid "alternatives version %s - Copyright (C) 2001 Red Hat, Inc.\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:85
++#: ../alternatives.c:87
+ #, c-format
+ msgid ""
+ "This may be freely redistributed under the terms of the GNU Public License.\n"
+ "\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:88
++#: ../alternatives.c:90
+ #, c-format
+ msgid "usage: alternatives --install <link> <name> <path> <priority>\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:89
++#: ../alternatives.c:91
+ #, c-format
+ msgid "                    [--initscript <service>]\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:90
++#: ../alternatives.c:92
+ #, c-format
+ msgid "                    [--family <family>]\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:91
++#: ../alternatives.c:93
+ #, c-format
+ msgid ""
+ "                    [--follower <follower_link> <follower_name> "
+ "<follower_path>]*\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:92
++#: ../alternatives.c:94
+ #, c-format
+ msgid "       alternatives --remove <name> <path>\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:93
++#: ../alternatives.c:95
+ #, c-format
+ msgid "       alternatives --auto <name>\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:94
++#: ../alternatives.c:96
+ #, c-format
+ msgid "       alternatives --config <name>\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:95
++#: ../alternatives.c:97
+ #, c-format
+ msgid "       alternatives --display <name>\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:96
++#: ../alternatives.c:98
+ #, c-format
+ msgid "       alternatives --set <name> <path/family>\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:97
++#: ../alternatives.c:99
+ #, c-format
+ msgid "       alternatives --list\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:98
++#: ../alternatives.c:100
+ #, c-format
+ msgid "       alternatives --remove-all <name>\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:99
++#: ../alternatives.c:101
+ #, c-format
+ msgid ""
+ "       alternatives --add-follower <name> <path> <follower_link> "
+ "<follower_name> <follower_path>\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:100
++#: ../alternatives.c:102
+ #, c-format
+ msgid "       alternatives --remove-follower <name> <path> <follower_name>\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:101
++#: ../alternatives.c:103
+ #, c-format
+ msgid "\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:102
++#: ../alternatives.c:104
+ #, c-format
+ msgid ""
+ "common options: --verbose --test --help --usage --version --keep-missing --"
+ "keep-foreign\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:104
++#: ../alternatives.c:106
+ #, c-format
+ msgid "                --altdir <directory> --admindir <directory>\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:372
++#: ../alternatives.c:374
+ #, c-format
+ msgid "reading %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:377
++#: ../alternatives.c:379
+ #, c-format
+ msgid "failed to open %s: %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:385
++#: ../alternatives.c:387
+ #, c-format
+ msgid "failed to read %s: %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:393
++#: ../alternatives.c:395
+ #, c-format
+ msgid "%s empty!\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:403
++#: ../alternatives.c:405
+ #, c-format
+ msgid "bad mode on line 1 of %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:410
++#: ../alternatives.c:412
+ #, c-format
+ msgid "bad primary link in %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:423
++#: ../alternatives.c:425
+ #, c-format
+ msgid "path %s unexpected in %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:432
++#: ../alternatives.c:434
+ #, c-format
+ msgid "missing path for follower %s in %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:447
++#: ../alternatives.c:449
+ #, c-format
+ msgid "unexpected end of file in %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:455
++#: ../alternatives.c:457
+ #, c-format
+ msgid "path to alternate expected in %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:456 ../alternatives.c:484 ../alternatives.c:497
+-#: ../alternatives.c:513 ../alternatives.c:539
++#: ../alternatives.c:458 ../alternatives.c:486 ../alternatives.c:499
++#: ../alternatives.c:515 ../alternatives.c:541
+ #, c-format
+ msgid "unexpected line in %s: %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:482
++#: ../alternatives.c:484
+ #, c-format
+ msgid "closing '@' missing or the family is empty in %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:496
++#: ../alternatives.c:498
+ #, c-format
+ msgid "numeric priority expected in %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:512
++#: ../alternatives.c:514
+ #, c-format
+ msgid "follower path expected in %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:549
++#: ../alternatives.c:551
+ #, c-format
+ msgid "failed to read link %s: %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:566
++#: ../alternatives.c:568
+ #, c-format
+ msgid "link points to no alternative -- setting mode to manual\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:571
++#: ../alternatives.c:573
+ #, c-format
+ msgid "link changed -- setting mode to manual\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:629 ../alternatives.c:636
++#: ../alternatives.c:631 ../alternatives.c:638
+ #, c-format
+ msgid "would remove %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:631 ../alternatives.c:640 ../alternatives.c:693
++#: ../alternatives.c:633 ../alternatives.c:642 ../alternatives.c:695
+ #, c-format
+ msgid "failed to remove link %s: %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:659
++#: ../alternatives.c:661
+ #, c-format
+ msgid "failed to link %s -> %s: %s exists and it is not a symlink\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:664
++#: ../alternatives.c:666
+ #, c-format
+ msgid ""
+ "failed to link %s -> %s: --keep-foreign was set and link %s points outside  "
+ "%s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:668 ../alternatives.c:686
++#: ../alternatives.c:670 ../alternatives.c:688
+ #, c-format
+ msgid "would link %s -> %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:677 ../alternatives.c:699
++#: ../alternatives.c:679 ../alternatives.c:701
+ #, c-format
+ msgid "failed to link %s -> %s: %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:732
++#: ../alternatives.c:734
+ #, c-format
+ msgid "%s already exists\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:734
++#: ../alternatives.c:736
+ #, c-format
+ msgid "failed to create %s: %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:767
++#: ../alternatives.c:769
+ #, c-format
+ msgid "failed to replace %s with %s: %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:795 ../alternatives.c:801 ../alternatives.c:813
+-#: ../alternatives.c:820
++#: ../alternatives.c:797 ../alternatives.c:803 ../alternatives.c:815
++#: ../alternatives.c:822
+ #, c-format
+ msgid "running %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:894
++#: ../alternatives.c:896
+ #, c-format
+ msgid "link %s incorrect for follower %s (%s %s)\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:969 ../alternatives.c:1006 ../alternatives.c:1220
+-#: ../alternatives.c:1251
++#: ../alternatives.c:971 ../alternatives.c:1008 ../alternatives.c:1222
++#: ../alternatives.c:1253
+ #, c-format
+ msgid "%s has not been configured as an alternative for %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:987
++#: ../alternatives.c:989
+ #, c-format
+ msgid "%s has not been configured as an follower alternative for %s (%s)\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1045
++#: ../alternatives.c:1047
+ #, c-format
+ msgid "the primary link for %s must be %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1097
++#: ../alternatives.c:1099
+ #, c-format
+ msgid "%s - status is auto.\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1099
++#: ../alternatives.c:1101
+ #, c-format
+ msgid "%s - status is manual.\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1101
++#: ../alternatives.c:1103
+ #, c-format
+ msgid " link currently points to %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1106
++#: ../alternatives.c:1108
+ #, c-format
+ msgid "family %s "
+ msgstr ""
+ 
+-#: ../alternatives.c:1107
++#: ../alternatives.c:1109
+ #, c-format
+ msgid "priority %d\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1109
++#: ../alternatives.c:1111
+ #, c-format
+ msgid " follower %s: %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1114
++#: ../alternatives.c:1116
+ #, c-format
+ msgid "Current `best' version is %s.\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1149
++#: ../alternatives.c:1151
+ #, c-format
+ msgid "There is %d program that provides '%s'.\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1150
++#: ../alternatives.c:1152
+ #, c-format
+ msgid "There are %d programs which provide '%s'.\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1154
++#: ../alternatives.c:1156
+ #, c-format
+ msgid "  Selection    Command\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1169
++#: ../alternatives.c:1171
+ #, c-format
+ msgid "Enter to keep the current selection[+], or type selection number: "
+ msgstr ""
+ 
+-#: ../alternatives.c:1173
++#: ../alternatives.c:1175
+ #, c-format
+ msgid ""
+ "\n"
+ "error reading choice\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1200
++#: ../alternatives.c:1202
+ #, c-format
+ msgid "cannot access %s/%s: No such file or directory\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1267
++#: ../alternatives.c:1269
+ #, c-format
+ msgid "(would remove %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1269
++#: ../alternatives.c:1271
+ #, c-format
+ msgid "failed to remove %s: %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1444
++#: ../alternatives.c:1446
+ #, c-format
+ msgid "--family can't contain the symbol '@'\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1506
++#: ../alternatives.c:1508
+ #, c-format
+ msgid "altdir %s invalid\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1520
++#: ../alternatives.c:1522
+ #, c-format
+ msgid "failed to create admindir: %s\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1525
++#: ../alternatives.c:1527
+ #, c-format
+ msgid "admindir %s invalid\n"
+ msgstr ""
+ 
+-#: ../alternatives.c:1535
++#: ../alternatives.c:1537
+ #, c-format
+ msgid "alternatives version %s\n"
+ msgstr ""
